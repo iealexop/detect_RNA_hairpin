@@ -9,9 +9,9 @@ import sys
 paren_min = 30
 middle_min = 3
 bulge_max = 2
-INPUT_FILE = '../gene_lists/RNAfold_3utr_all_output.txt'
+INPUT_FILE = 'your_input.tsv'
 OUTPUT_TYPE = 'tsv'
-OUTPUT_FILE = '../gene_lists/3utr_hairpin_trimmed_POSITIONS.tsv'
+OUTPUT_FILE = 'your_output.tsv'
 
 # logging
 log = open('parse_rnafold_hairpin.log', 'w')
@@ -105,7 +105,6 @@ def parse_rnafold_hairpin(input_file, output_type, output_file):
             temp_structure = line.strip()[:126]  # trimming the first 125
             last_paren = temp_structure.rfind('(')  # if not trimmed, remove free energy calc from line's end
             temp_structure = temp_structure[:last_paren].strip()
-            # temp_structure = re.sub(r'\)[^)]*$', ')', temp_structure)  # trim from the end until ')'
             trimmed_structure = temp_structure + '('  # append a (, useful for the candidate_hairpin logic
 
             print(f"Processing: {gene_id}, {trimmed_structure}")  # Debug print
