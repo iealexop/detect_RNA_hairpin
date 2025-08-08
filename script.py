@@ -9,10 +9,11 @@ length_min = 35
 loop_min = 3
 loop_max = 10
 bulge_max = 2
-input_file = '../gene_lists/RNAsubopt_first_3utr.txt'
-output_file = '../gene_lists/3utr_hairpin_trimmed_subopt.tsv'
+input_file = '../gene_lists/RNAfold_60.txt'
+output_file = '../gene_lists/3utr_hairpin_60.tsv'
 
-log = open('parse_rnafold_hairpin.log', 'w') # for debugging
+# logging
+log = open('parse_rnafold_hairpin.log', 'w')
 sys.stdout = log
 
 def hairpin_check(candidate_hairpin, length_min, loop_min, bulge_max):
@@ -45,7 +46,7 @@ def hairpin_check(candidate_hairpin, length_min, loop_min, bulge_max):
     diff = abs(open_count_pre - close_count_pre)
 
     if open_count_pre > close_count_pre:  # trimming to balance brackets
-        list_hairpin = list(candidate_hairpin)  # converting to list to easily skip dots
+        list_hairpin = list(candidate_hairpin)  # converting to list
         removed = 0
         for i in range(len(list_hairpin)):
             if list_hairpin[i] == '(':
@@ -87,19 +88,19 @@ def parse_rnafold_hairpin(input_file, output_file):
         lines = file.readlines()
 
     data = []
-    gene_id = None
+    gene_name = None
     rna = None
 
     for i, line in enumerate(lines):
         if line.startswith('>'):
-            gene_id_match = re.search(r'gene_id=([^;]+);', line)
-            if gene_id_match:
-                gene_id = gene_id_match.group(1)
+            gene_name_match = re.search(r'gene_name=([^;]+);', line)
+            if gene_name_match:
+                gene_name = gene_name_match.group(1)
         elif line.startswith(('A', 'U', 'G', 'C')):
             rna = line.strip()
         elif line.startswith(('.', '(', ')')):
             # Extract MFE value
-            mfe_match = re.search(r'\s+([-\d.]+)\s+', line)
+            mfe_match = re.search(r'\(\s*([-+]?\d+\.\d+)\s*\)', line)
             mfe = mfe_match.group(1) if mfe_match else None
 
             # Process structure
@@ -108,9 +109,9 @@ def parse_rnafold_hairpin(input_file, output_file):
             if structure_parts:
                 trimmed_structure = structure_parts[0] + '('  # Add '(' at the end
 
-            print(f"Processing: {gene_id}, {trimmed_structure}")  # Debug print
+            print(f"Processing: {gene_name}, {trimmed_structure}")  # Debug print
 
-            if trimmed_structure and gene_id:
+            if trimmed_structure and gene_name:
                 start_position = None
                 final_position = None
                 candidate_hairpin = None
@@ -133,7 +134,7 @@ def parse_rnafold_hairpin(input_file, output_file):
                                 exact_start = match.start()
                                 exact_end = match.end()
                                 rna_segment = rna[exact_start:exact_end] if rna else None
-                                data.append([gene_id, result, trimmed_structure[:-1],
+                                data.append([gene_name, result, trimmed_structure[:-1],
                                              candidate_hairpin, exact_start, exact_end,
                                              rna_segment, mfe])
                                 break
@@ -141,11 +142,11 @@ def parse_rnafold_hairpin(input_file, output_file):
                             start_position = position
                             final_position = None
                 if result == 'N':
-                    data.append([gene_id, result, trimmed_structure[:-1], candidate_hairpin,  # Remove the added '(' when storing
+                    data.append([gene_name, result, trimmed_structure[:-1], candidate_hairpin,  # Remove added '('
                                start_position, final_position, rna, mfe])
 
     # Write output
-    headers = ['GeneID', 'Hairpin', 'Trimmed_Str', 'Candidate_Hairpin_Str', 'StartPos', 'EndPos', 'RNA', 'MFE']
+    headers = ['Gene_Name', 'Hairpin', 'Trimmed_Str', 'Candidate_Hairpin_Str', 'StartPos', 'EndPos', 'RNA', 'MFE']
 
     with open(output_file, 'w', newline='') as f:
         writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_NONE, quotechar='')
@@ -157,4 +158,3 @@ def parse_rnafold_hairpin(input_file, output_file):
 
 parse_rnafold_hairpin(input_file, output_file)
 log.close()
-```
